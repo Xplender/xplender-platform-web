@@ -1,7 +1,6 @@
-import { getOrganization, listPlatformUsers } from "../actions";
+import { getOrganization } from "../actions";
 import { OrgDetailClient } from "./OrgDetailClient";
 
-// Re-throws Next.js internal errors (redirects, etc.), returns null for real API errors
 async function safeGet<T>(fn: () => Promise<T>): Promise<T | null> {
   try {
     return await fn();
@@ -18,11 +17,6 @@ export default async function OrganizationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
-  const [org, allUsers] = await Promise.all([
-    safeGet(() => getOrganization(id)),
-    safeGet(() => listPlatformUsers()).then((r) => r ?? []),
-  ]);
-
-  return <OrgDetailClient org={org} allUsers={allUsers} />;
+  const org = await safeGet(() => getOrganization(id));
+  return <OrgDetailClient org={org} />;
 }
