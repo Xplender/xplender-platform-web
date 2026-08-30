@@ -53,6 +53,39 @@ export async function getOrganization(id: string) {
   return res.json();
 }
 
+export async function inviteOrgMember(
+  orgId: string,
+  data: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    orgRole: string;
+  }
+): Promise<{ success: true } | { success: false; error: string }> {
+  const token = await getToken();
+  const res = await fetch(`${API_URL}/api/v1/organizations/${orgId}/invite`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      email: data.email,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phone: data.phone || undefined,
+      orgRole: data.orgRole,
+    }),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as { message?: string };
+    return { success: false, error: err.message ?? "Error al invitar miembro" };
+  }
+  revalidatePath(`/organizations/${orgId}`);
+  return { success: true };
+}
+
 export async function addMember(orgId: string, userId: string, role: string) {
   const token = await getToken();
   const res = await fetch(`${API_URL}/api/v1/organizations/${orgId}/members`, {

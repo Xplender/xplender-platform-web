@@ -14,7 +14,7 @@ import {
   updateStatus,
   updateProductStatus,
 } from "../actions";
-import { AddMemberModal } from "./AddMemberModal";
+import { InviteMemberModal } from "./InviteMemberModal";
 import { AddProductModal } from "./AddProductModal";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -43,13 +43,6 @@ type OrgDetail = {
   members: MemberRow[];
   products: ProductRow[];
   createdAt: string;
-};
-
-type UserOption = {
-  id: string;
-  firstName: string | null;
-  lastName: string | null;
-  email: string | null;
 };
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -116,13 +109,7 @@ function RoleBadge({ role }: { role: string }) {
 
 // ── Main client ───────────────────────────────────────────────────────────────
 
-export function OrgDetailClient({
-  org,
-  allUsers,
-}: {
-  org: OrgDetail | null;
-  allUsers: UserOption[];
-}) {
+export function OrgDetailClient({ org }: { org: OrgDetail | null }) {
   if (!org) {
     return (
       <div className="flex flex-col h-full items-center justify-center gap-3">
@@ -161,10 +148,6 @@ export function OrgDetailClient({
     : null;
 
   const s = STATUS_MAP[org.status];
-
-  // Users not yet in this org
-  const memberIds = new Set(org.members.map((m) => m.userId));
-  const availableUsers = allUsers.filter((u) => !memberIds.has(u.id));
 
   return (
     <div className="flex flex-col h-full">
@@ -365,9 +348,8 @@ export function OrgDetailClient({
 
       {/* Modals */}
       {memberModal && (
-        <AddMemberModal
+        <InviteMemberModal
           orgId={org.id}
-          users={availableUsers}
           onClose={() => {
             setMemberModal(false);
             router.refresh();
