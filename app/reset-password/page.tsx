@@ -15,16 +15,17 @@ function ResetPasswordContent() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [tokenInvalid, setTokenInvalid] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  if (!token) {
+  if (!token || tokenInvalid) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 p-4">
         <div className="w-full max-w-sm rounded-2xl bg-white shadow-lg p-8 text-center">
           <AlertCircle className="h-10 w-10 text-red-400 mx-auto mb-4" />
           <h1 className="text-lg font-semibold text-zinc-900">Enlace inválido</h1>
           <p className="mt-2 text-sm text-zinc-500">
-            Este enlace de recuperación no es válido o ha expirado.
+            Este enlace de recuperación no es válido o ya fue utilizado.
           </p>
           <a
             href="/forgot-password"
@@ -74,13 +75,16 @@ function ResetPasswordContent() {
     }
 
     startTransition(async () => {
-      try {
-        await resetPassword(token!, password);
+      const result = await resetPassword(token!, password);
+      if (result.success) {
         setSuccess(true);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Error al restablecer la contraseña"
-        );
+      } else if (
+        result.error === "Invalid reset token" ||
+        result.error === "Reset token expired"
+      ) {
+        setTokenInvalid(true);
+      } else {
+        setError(result.error);
       }
     });
   }
