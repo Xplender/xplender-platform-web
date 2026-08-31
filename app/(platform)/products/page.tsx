@@ -63,10 +63,10 @@ export default async function ProductsPage() {
   const totalDeployments = products.reduce((acc, p) => acc + p.orgs.length, 0);
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full overflow-hidden">
 
       {/* Header */}
-      <div className="bg-white border-b border-[#E2E4EC] px-8 py-5 flex items-center justify-between flex-shrink-0">
+      <div className="bg-white border-b border-[#E2E4EC] px-4 sm:px-8 py-4 sm:py-5 flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-xl font-bold text-[#111318] leading-tight">Productos</h1>
           <p className="text-sm text-[#7B8099] mt-0.5">Productos Xplender desplegados en organizaciones</p>
@@ -77,8 +77,8 @@ export default async function ProductsPage() {
       </div>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto px-8 py-8">
-        <div className="max-w-[860px] mx-auto space-y-5">
+      <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-5 sm:py-8">
+        <div className="max-w-[860px] mx-auto space-y-4 sm:space-y-5">
 
           {products.length === 0 ? (
             <div
@@ -112,7 +112,7 @@ export default async function ProductsPage() {
                   style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}
                 >
                   {/* Card header */}
-                  <div className="flex items-center gap-4 px-6 py-4 border-b border-[#F0F1F5]">
+                  <div className="flex flex-wrap items-center gap-3 px-4 sm:px-6 py-4 border-b border-[#F0F1F5]">
                     <div className="w-10 h-10 rounded-xl bg-[#EEF2FF] flex items-center justify-center flex-shrink-0">
                       <PackageIcon className="w-5 h-5 text-[#4C63FC]" />
                     </div>
@@ -122,10 +122,10 @@ export default async function ProductsPage() {
                         <span className="text-xs font-mono text-[#7B8099]">({product.productId})</span>
                       </div>
                       {description && (
-                        <p className="text-xs text-[#7B8099] mt-0.5">{description}</p>
+                        <p className="text-xs text-[#7B8099] mt-0.5 hidden sm:block">{description}</p>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 flex-wrap">
                       {product.activeCount > 0 && (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[#ecfdf5] text-[#065f46]">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
@@ -164,14 +164,14 @@ export default async function ProductsPage() {
                         <Link
                           key={entry.orgId}
                           href={`/organizations/${entry.orgId}`}
-                          className="flex items-center gap-3 px-6 py-3 hover:bg-[#F8F9FB] transition-colors group"
+                          className="flex items-center gap-3 px-4 sm:px-6 py-3 hover:bg-[#F8F9FB] transition-colors group"
                         >
                           <BuildingIcon className="w-4 h-4 text-[#C0C4D6] flex-shrink-0" />
                           <p className="text-sm font-medium text-[#444A60] group-hover:text-[#4C63FC] transition-colors flex-1">
                             {entry.orgName}
                           </p>
                           {entry.planId && (
-                            <span className="text-xs text-[#7B8099]">{entry.planId}</span>
+                            <span className="text-xs text-[#7B8099] hidden sm:block flex-shrink-0">{entry.planId}</span>
                           )}
                           <span
                             className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border"

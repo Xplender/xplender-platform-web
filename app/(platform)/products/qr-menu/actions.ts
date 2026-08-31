@@ -69,6 +69,3 @@ export async function getAdminSessionUrl(orgId: string): Promise<string> {
   return data.adminUrl;
 }
 
-export async function isQrMenuAvailable(): Promise<boolean> {
-  return QRMENU_API_URL.length > 0;
-}
