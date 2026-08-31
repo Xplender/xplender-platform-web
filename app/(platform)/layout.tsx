@@ -11,6 +11,9 @@ export default async function PlatformLayout({
   const session = await auth();
   if (!session) redirect("/login");
 
+  const internalRoles = ["xplender:owner", "xplender:admin", "xplender:support"];
+  if (!internalRoles.includes(session.xplenderRole ?? "")) redirect("/portal");
+
   const user = session.user;
 
   return (

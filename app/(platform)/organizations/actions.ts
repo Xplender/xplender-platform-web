@@ -133,7 +133,12 @@ export async function getDashboardStats() {
   return res.json() as Promise<{ totalOrgs: number; activeOrgs: number; totalUsers: number }>;
 }
 
-export async function addProduct(orgId: string, productId: string, planId: string) {
+export async function addProduct(
+  orgId: string,
+  productId: string,
+  planId: string | null,
+  trialDays: number | null
+) {
   const token = await getToken();
   const res = await fetch(`${API_URL}/api/v1/organizations/${orgId}/products`, {
     method: "POST",
@@ -141,7 +146,11 @@ export async function addProduct(orgId: string, productId: string, planId: strin
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ productId, planId: planId || null }),
+    body: JSON.stringify({
+      productId,
+      planId: planId || null,
+      trialDays: trialDays || null,
+    }),
   });
   if (!res.ok) await handleError(res, "Error al añadir producto");
   revalidatePath(`/organizations/${orgId}`);
