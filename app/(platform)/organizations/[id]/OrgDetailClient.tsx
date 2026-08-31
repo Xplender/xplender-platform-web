@@ -11,7 +11,6 @@ import {
 import {
   removeMember,
   removeProduct,
-  updateStatus,
   updateProductStatus,
 } from "../actions";
 import { InviteMemberModal } from "./InviteMemberModal";
@@ -47,12 +46,6 @@ type OrgDetail = {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const STATUS_MAP: Record<string, { color: string; bg: string; border: string; dot: string; label: string }> = {
-  active:    { color: "#065f46", bg: "#ecfdf5", border: "#a7f3d0", dot: "#10b981", label: "Activo" },
-  trial:     { color: "#3730a3", bg: "#eef2ff", border: "#c7d2fe", dot: "#6366f1", label: "Trial" },
-  suspended: { color: "#991b1b", bg: "#fef2f2", border: "#fecaca", dot: "#ef4444", label: "Suspendido" },
-};
-
 const ORG_ROLE_MAP: Record<string, { color: string; bg: string; label: string }> = {
   owner:  { color: "#92400e", bg: "#fffbeb", label: "Owner" },
   admin:  { color: "#5b21b6", bg: "#f5f3ff", label: "Admin" },
@@ -81,19 +74,6 @@ function avatarColor(seed: string) {
 }
 
 // ── Sub-components ────────────────────────────────────────────────────────────
-
-function StatusBadge({ status }: { status: string }) {
-  const s = STATUS_MAP[status] ?? { color: "#374151", bg: "#f3f4f6", border: "#e5e7eb", dot: "#9ca3af", label: status };
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border"
-      style={{ color: s.color, backgroundColor: s.bg, borderColor: s.border }}
-    >
-      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.dot }} />
-      {s.label}
-    </span>
-  );
-}
 
 function RoleBadge({ role }: { role: string }) {
   const r = ORG_ROLE_MAP[role] ?? { color: "#374151", bg: "#f3f4f6", label: role };
@@ -147,41 +127,19 @@ export function OrgDetailClient({ org }: { org: OrgDetail | null }) {
     ? new Date(org.createdAt).toLocaleDateString("es-MX", { month: "long", year: "numeric" })
     : null;
 
-  const s = STATUS_MAP[org.status];
-
   return (
     <div className="flex flex-col h-full">
 
       {/* Header */}
-      <div className="bg-white border-b border-[#E2E4EC] px-8 py-5 flex items-center justify-between flex-shrink-0">
-        <div>
-          <h1 className="text-xl font-bold text-[#111318] leading-tight">{org.name}</h1>
-          <p className="text-sm text-[#7B8099] mt-0.5">
-            @{org.slug}{createdDate ? ` · Creada ${createdDate}` : ""}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <StatusBadge status={org.status} />
-          {org.status === "active" ? (
-            <button
-              onClick={() => mutate(() => updateStatus(org.id, "suspended"), "Organización suspendida")}
-              className="inline-flex items-center px-3 py-1.5 text-xs font-semibold border border-[#fecaca] text-[#991b1b] rounded-xl hover:bg-[#fef2f2] transition-colors cursor-pointer"
-            >
-              Suspender
-            </button>
-          ) : (
-            <button
-              onClick={() => mutate(() => updateStatus(org.id, "active"), "Organización activada")}
-              className="inline-flex items-center px-3 py-1.5 text-xs font-semibold border border-[#a7f3d0] text-[#065f46] rounded-xl hover:bg-[#ecfdf5] transition-colors cursor-pointer"
-            >
-              Activar
-            </button>
-          )}
-        </div>
+      <div className="bg-white border-b border-[#E2E4EC] px-4 sm:px-8 py-4 sm:py-5 flex-shrink-0">
+        <h1 className="text-xl font-bold text-[#111318] leading-tight">{org.name}</h1>
+        <p className="text-sm text-[#7B8099] mt-0.5">
+          @{org.slug}{createdDate ? ` · Creada ${createdDate}` : ""}
+        </p>
       </div>
 
       {/* Breadcrumb */}
-      <div className="px-8 pt-4 pb-0 flex-shrink-0">
+      <div className="px-4 sm:px-8 pt-4 pb-0 flex-shrink-0">
         <div className="flex items-center gap-1.5 text-xs font-medium text-[#7B8099]">
           <Link
             href="/organizations"
@@ -196,8 +154,8 @@ export function OrgDetailClient({ org }: { org: OrgDetail | null }) {
       </div>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto px-8 py-6">
-        <div className="max-w-[900px] mx-auto grid grid-cols-2 gap-6 items-start">
+      <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-4 sm:py-6">
+        <div className="max-w-[900px] mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start">
 
           {/* Members */}
           <section>
@@ -316,7 +274,7 @@ export function OrgDetailClient({ org }: { org: OrgDetail | null }) {
           </section>
 
           {/* Org info */}
-          <section className="col-span-2">
+          <section className="md:col-span-2">
             <p className="text-[10px] font-semibold text-[#7B8099] uppercase tracking-widest mb-3">
               Información
             </p>

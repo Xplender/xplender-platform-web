@@ -67,3 +67,39 @@ export async function changeUserRole(userId: string, roleId: string) {
   if (!res.ok) await handleError(res, "Error al cambiar rol");
   revalidatePath("/users");
 }
+
+export type OrgMemberRow = {
+  userId: string;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  enabled: boolean;
+  orgId: string;
+  orgName: string;
+  orgRole: string;
+};
+
+export type AvailableRole = {
+  id: string;
+  name: string;
+};
+
+export async function listOrgMembers(): Promise<OrgMemberRow[]> {
+  const token = await getToken();
+  const res = await fetch(`${API_URL}/api/v1/users/org-members`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
+export async function listAvailableRoles(): Promise<AvailableRole[]> {
+  const token = await getToken();
+  const res = await fetch(`${API_URL}/api/v1/users/roles`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
