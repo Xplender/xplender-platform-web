@@ -1,8 +1,33 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { XIcon } from "@/components/layout/nav-icons";
 import { addProduct } from "../actions";
+import { listRegisteredProducts } from "../../settings/actions";
+
+type Plan = { id: string; name: string; priceMonthly?: number };
+type RegisteredProduct = {
+  id: string;
+  productId: string | null;
+  name: string | null;
+  plans: string | null;
+};
+
+const TRIAL_OPTIONS = [
+  { label: "15 días", value: 15 },
+  { label: "30 días", value: 30 },
+  { label: "3 meses", value: 90 },
+];
+
+const STATUS_OPTIONS = [
+  { value: "trial",  label: "Trial" },
+  { value: "active", label: "Activo" },
+];
+
+function parsePlans(raw: string | null): Plan[] {
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch { return []; }
+}
 
 export function AddProductModal({
   orgId,
@@ -11,17 +36,43 @@ export function AddProductModal({
   orgId: string;
   onClose: () => void;
 }) {
-  const [productId, setProductId] = useState("");
-  const [planId, setPlanId] = useState("");
+  const [registeredProducts, setRegisteredProducts] = useState<RegisteredProduct[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(true);
+
+  const [selectedProductId, setSelectedProductId] = useState("");
+  const [selectedPlanId, setSelectedPlanId] = useState("");
+  const [status, setStatus] = useState("trial");
+  const [trialDays, setTrialDays] = useState(30);
+
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  useEffect(() => {
+    listRegisteredProducts()
+      .then(setRegisteredProducts)
+      .catch(() => setRegisteredProducts([]))
+      .finally(() => setLoadingProducts(false));
+  }, []);
+
+  const selectedProduct = registeredProducts.find((p) => p.productId === selectedProductId);
+  const plans = parsePlans(selectedProduct?.plans ?? null);
+
+  function handleProductChange(productId: string) {
+    setSelectedProductId(productId);
+    setSelectedPlanId("");
+  }
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     startTransition(async () => {
       try {
-        await addProduct(orgId, productId, planId);
+        await addProduct(
+          orgId,
+          selectedProductId,
+          selectedPlanId || null,
+          status === "trial" ? trialDays : null
+        );
         onClose();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Error desconocido");
@@ -50,32 +101,104 @@ export function AddProductModal({
         </div>
 
         <form onSubmit={submit} className="px-6 py-5 space-y-4">
+
+          {/* Producto */}
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-[#111318]">
-              ID del producto *
-            </label>
-            <input
-              required
-              value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-              placeholder="qr-menu"
-              disabled={pending}
-              className="w-full px-3 py-2.5 text-sm border border-[#E2E4EC] rounded-xl bg-white text-[#111318] placeholder-[#7B8099] focus:outline-none focus:ring-2 focus:ring-[#4C63FC]/30 focus:border-[#4C63FC] transition-all disabled:opacity-60 font-mono"
-            />
-            <p className="text-xs text-[#7B8099]">Identificador único del producto (ej: qr-menu)</p>
+            <label className="block text-sm font-medium text-[#111318]">Producto *</label>
+            {loadingProducts ? (
+              <div className="w-full px-3 py-2.5 text-sm border border-[#E2E4EC] rounded-xl text-[#7B8099]">
+                Cargando productos…
+              </div>
+            ) : registeredProducts.length === 0 ? (
+              <div className="w-full px-3 py-2.5 text-sm border border-[#fecaca] bg-[#fef2f2] rounded-xl text-[#991b1b]">
+                No hay productos registrados. Ve a Ajustes para registrar uno.
+              </div>
+            ) : (
+              <select
+                required
+                value={selectedProductId}
+                onChange={(e) => handleProductChange(e.target.value)}
+                disabled={pending}
+                className="w-full px-3 py-2.5 text-sm border border-[#E2E4EC] rounded-xl bg-white text-[#111318] focus:outline-none focus:ring-2 focus:ring-[#4C63FC]/30 focus:border-[#4C63FC] transition-all disabled:opacity-60 cursor-pointer"
+              >
+                <option value="">Selecciona un producto…</option>
+                {registeredProducts.map((p) => (
+                  <option key={p.id} value={p.productId ?? ""}>
+                    {p.name ?? p.productId}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
 
-          <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-[#111318]">Plan</label>
-            <input
-              value={planId}
-              onChange={(e) => setPlanId(e.target.value)}
-              placeholder="basic"
-              disabled={pending}
-              className="w-full px-3 py-2.5 text-sm border border-[#E2E4EC] rounded-xl bg-white text-[#111318] placeholder-[#7B8099] focus:outline-none focus:ring-2 focus:ring-[#4C63FC]/30 focus:border-[#4C63FC] transition-all disabled:opacity-60"
-            />
-            <p className="text-xs text-[#7B8099]">Opcional. Ej: basic, pro, enterprise</p>
-          </div>
+          {/* Plan */}
+          {selectedProduct && (
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#111318]">Plan</label>
+              <select
+                value={selectedPlanId}
+                onChange={(e) => setSelectedPlanId(e.target.value)}
+                disabled={pending || plans.length === 0}
+                className="w-full px-3 py-2.5 text-sm border border-[#E2E4EC] rounded-xl bg-white text-[#111318] focus:outline-none focus:ring-2 focus:ring-[#4C63FC]/30 focus:border-[#4C63FC] transition-all disabled:opacity-60 cursor-pointer"
+              >
+                <option value="">Sin plan específico</option>
+                {plans.map((pl) => (
+                  <option key={pl.id} value={pl.id}>
+                    {pl.name}
+                    {pl.priceMonthly != null ? ` — $${pl.priceMonthly}/mes` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* Estado */}
+          {selectedProduct && (
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#111318]">Estado inicial</label>
+              <div className="flex gap-2">
+                {STATUS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setStatus(opt.value)}
+                    disabled={pending}
+                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-xl border transition-all cursor-pointer disabled:opacity-50 ${
+                      status === opt.value
+                        ? "border-[#4C63FC] text-[#4C63FC] bg-[#EEF2FF]"
+                        : "border-[#E2E4EC] text-[#444A60] bg-white hover:border-[#4C63FC]/40"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Duración del trial */}
+          {selectedProduct && status === "trial" && (
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-[#111318]">Duración del trial</label>
+              <div className="flex gap-2">
+                {TRIAL_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setTrialDays(opt.value)}
+                    disabled={pending}
+                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-xl border transition-all cursor-pointer disabled:opacity-50 ${
+                      trialDays === opt.value
+                        ? "border-[#4C63FC] text-[#4C63FC] bg-[#EEF2FF]"
+                        : "border-[#E2E4EC] text-[#444A60] bg-white hover:border-[#4C63FC]/40"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {error && (
             <p className="text-sm text-[#991b1b] bg-[#fef2f2] border border-[#fecaca] rounded-xl px-3 py-2">
@@ -94,7 +217,7 @@ export function AddProductModal({
             </button>
             <button
               type="submit"
-              disabled={pending || !productId}
+              disabled={pending || !selectedProductId || registeredProducts.length === 0}
               className="px-4 py-2 text-sm font-semibold text-white rounded-xl transition-all hover:opacity-90 cursor-pointer disabled:opacity-60"
               style={{ backgroundColor: "#4C63FC" }}
             >
