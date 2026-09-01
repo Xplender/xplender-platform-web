@@ -7,9 +7,7 @@ import {
   setUserEnabled,
   resendInvitation,
   createUser,
-  changeUserRole,
   type OrgMemberRow,
-  type AvailableRole,
 } from "./actions";
 
 export type UserRow = {
@@ -44,11 +42,6 @@ const ORG_ROLE_MAP: Record<string, { color: string; bg: string; label: string }>
   owner:  { color: "#92400e", bg: "#fffbeb", label: "Owner" },
   admin:  { color: "#5b21b6", bg: "#f5f3ff", label: "Admin" },
   member: { color: "#374151", bg: "#f3f4f6", label: "Miembro" },
-};
-
-const ROLE_LABEL: Record<string, string> = {
-  "xplender:admin":   "Admin",
-  "xplender:support": "Soporte",
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -99,12 +92,10 @@ function StatusBadge({ enabled }: { enabled: boolean }) {
 // ── Internal user row (desktop) ───────────────────────────────────────────────
 
 function InternalUserRow({
-  user, index, callerRole, availableRoles, onToast,
+  user, index, callerRole, onToast,
 }: {
-  user: UserRow; index: number; callerRole: string;
-  availableRoles: AvailableRole[]; onToast: (msg: string) => void;
+  user: UserRow; index: number; callerRole: string; onToast: (msg: string) => void;
 }) {
-  const [roleOpen, setRoleOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const name = fullName(user.firstName, user.lastName, user.email);
   const av = avatarColor(user.id);
@@ -120,25 +111,6 @@ function InternalUserRow({
     });
   }
 
-  function handleRoleChange(roleId: string, roleName: string) {
-    setRoleOpen(false);
-    startTransition(async () => {
-      try {
-        await changeUserRole(user.id, roleId);
-        onToast(`Rol cambiado a ${ROLE_LABEL[roleName] ?? roleName}`);
-      } catch { onToast("Error al cambiar rol"); }
-    });
-  }
-
-  function handleResend() {
-    startTransition(async () => {
-      try {
-        await resendInvitation(user.id);
-        onToast(`Invitación reenviada a ${name}`);
-      } catch { onToast("Error al reenviar invitación"); }
-    });
-  }
-
   return (
     <tr className={`border-b border-[#F0F1F5] last:border-0 transition-colors ${index % 2 === 0 ? "bg-white" : "bg-[#FAFBFC]"} hover:bg-[#F4F5FF]`}>
       <td className="py-4 pl-6 pr-4">
@@ -147,10 +119,7 @@ function InternalUserRow({
             {initials(name)}
           </div>
           <div>
-            <div className="flex items-center gap-1.5">
-              <p className="text-sm font-semibold text-[#111318]">{name}</p>
-              {isOwner && <span className="text-[10px] font-bold text-[#4C63FC] bg-[#EEF2FF] px-1.5 py-0.5 rounded-md">Propietario</span>}
-            </div>
+            <p className="text-sm font-semibold text-[#111318]">{name}</p>
             <p className="text-xs text-[#7B8099] mt-0.5">{user.email ?? "—"}</p>
           </div>
         </div>
@@ -165,52 +134,17 @@ function InternalUserRow({
         {isOwner ? (
           <span className="text-xs text-[#C0C4D6] italic">Sin acciones</span>
         ) : canManage ? (
-          <div className="flex items-center gap-3 flex-wrap">
-            {callerRole === "xplender:owner" && availableRoles.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setRoleOpen((o) => !o)}
-                  disabled={pending}
-                  className="flex items-center gap-1.5 text-xs font-medium text-[#444A60] border border-[#E2E4EC] rounded-lg px-2.5 py-1.5 hover:border-[#4C63FC] hover:text-[#4C63FC] transition-colors bg-white cursor-pointer disabled:opacity-50"
-                >
-                  Cambiar rol
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                {roleOpen && (
-                  <div className="absolute top-full left-0 mt-1 bg-white border border-[#E2E4EC] rounded-xl shadow-lg z-20 min-w-[170px] overflow-hidden" style={{ boxShadow: "0 8px 24px rgba(0,0,0,0.1)" }}>
-                    {availableRoles.map((r) => (
-                      <button
-                        key={r.id}
-                        className={`w-full text-left px-3 py-2 text-xs font-medium transition-colors cursor-pointer ${user.role === r.name ? "text-[#4C63FC] bg-[#EEF2FF]" : "text-[#444A60] hover:bg-[#F4F5F7]"}`}
-                        onClick={() => handleRoleChange(r.id, r.name)}
-                      >
-                        {ROLE_LABEL[r.name] ?? r.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-            <button
-              onClick={handleToggle}
-              disabled={pending}
-              className={`text-xs font-medium border rounded-lg px-2.5 py-1.5 transition-colors bg-white cursor-pointer disabled:opacity-50 ${
-                user.enabled
-                  ? "text-red-600 border-red-200 hover:border-red-400 hover:bg-red-50"
-                  : "text-green-700 border-green-200 hover:border-green-400 hover:bg-green-50"
-              }`}
-            >
-              {user.enabled ? "Desactivar" : "Activar"}
-            </button>
-            <button
-              onClick={handleResend}
-              disabled={pending}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#7B8099] hover:text-[#4C63FC] transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-              Reenviar
-            </button>
-          </div>
+          <button
+            onClick={handleToggle}
+            disabled={pending}
+            className={`text-xs font-medium border rounded-lg px-2.5 py-1.5 transition-colors bg-white cursor-pointer disabled:opacity-50 ${
+              user.enabled
+                ? "text-red-600 border-red-200 hover:border-red-400 hover:bg-red-50"
+                : "text-green-700 border-green-200 hover:border-green-400 hover:bg-green-50"
+            }`}
+          >
+            {user.enabled ? "Desactivar" : "Activar"}
+          </button>
         ) : null}
       </td>
     </tr>
@@ -219,10 +153,9 @@ function InternalUserRow({
 
 // ── Internal user card (mobile) ───────────────────────────────────────────────
 
-function InternalUserCard({ user, index, onResend }: { user: UserRow; index: number; onResend: () => void }) {
+function InternalUserCard({ user, index }: { user: UserRow; index: number }) {
   const name = fullName(user.firstName, user.lastName, user.email);
   const av = avatarColor(user.id);
-  const isOwner = user.role === "xplender:owner";
   return (
     <div className="bg-white rounded-[14px] border border-[#E2E4EC] px-4 py-4 space-y-3" style={{ boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
       <div className="flex items-center gap-3">
@@ -230,22 +163,13 @@ function InternalUserCard({ user, index, onResend }: { user: UserRow; index: num
           {initials(name)}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <p className="text-sm font-semibold text-[#111318] truncate">{name}</p>
-            {isOwner && <span className="text-[10px] font-bold text-[#4C63FC] bg-[#EEF2FF] px-1.5 py-0.5 rounded-md">Propietario</span>}
-          </div>
+          <p className="text-sm font-semibold text-[#111318] truncate">{name}</p>
           <p className="text-xs text-[#7B8099] truncate">{user.email ?? "—"}</p>
         </div>
         <StatusBadge enabled={user.enabled} />
       </div>
-      <div className="flex items-center justify-between pt-1 border-t border-[#F0F1F5]">
+      <div className="pt-1 border-t border-[#F0F1F5]">
         <RoleBadge role={user.role ?? ""} map={XPLENDER_ROLE_MAP} />
-        {!isOwner && (
-          <button onClick={onResend} className="flex items-center gap-1 text-xs font-medium text-[#7B8099] hover:text-[#4C63FC] transition-colors cursor-pointer">
-            <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-            Reenviar
-          </button>
-        )}
       </div>
     </div>
   );
@@ -439,12 +363,10 @@ export function UsersClient({
   initialUsers,
   callerRole,
   orgMembers,
-  availableRoles,
 }: {
   initialUsers: UserRow[];
   callerRole: string;
   orgMembers: OrgMemberRow[];
-  availableRoles: AvailableRole[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("internal");
@@ -457,7 +379,7 @@ export function UsersClient({
   const q = query.toLowerCase();
 
   const internalUsers = useMemo(
-    () => initialUsers.filter((u) => u.role !== null),
+    () => initialUsers.filter((u) => u.role?.startsWith("xplender:")),
     [initialUsers]
   );
 
@@ -540,7 +462,7 @@ export function UsersClient({
                 {filteredInternal.length === 0
                   ? <p className="text-sm text-[#7B8099] text-center py-8">Sin resultados</p>
                   : filteredInternal.map((u, i) => (
-                    <InternalUserCard key={u.id} user={u} index={i} onResend={() => resendInvitation(u.id).then(() => showToast(`Invitación reenviada`)).catch(() => showToast("Error"))} />
+                    <InternalUserCard key={u.id} user={u} index={i} />
                   ))
                 }
               </div>
@@ -559,7 +481,7 @@ export function UsersClient({
                       {filteredInternal.length === 0
                         ? <tr><td colSpan={4} className="py-10 text-center text-sm text-[#7B8099]">Sin resultados</td></tr>
                         : filteredInternal.map((u, i) => (
-                          <InternalUserRow key={u.id} user={u} index={i} callerRole={callerRole} availableRoles={availableRoles} onToast={showToast} />
+                          <InternalUserRow key={u.id} user={u} index={i} callerRole={callerRole} onToast={showToast} />
                         ))
                       }
                     </tbody>

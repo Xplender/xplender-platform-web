@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { UsersClient, type UserRow } from "./UsersClient";
-import { listOrgMembers, listAvailableRoles, type OrgMemberRow, type AvailableRole } from "./actions";
+import { listOrgMembers, type OrgMemberRow } from "./actions";
 
 const API_URL = process.env.XPLENDER_AUTH_URL ?? "http://localhost:8080";
 
@@ -18,16 +18,15 @@ export default async function UsersPage() {
   const token = session?.accessToken;
   const callerRole = session?.xplenderRole ?? "";
 
-  const [users, orgMembers, availableRoles] = token
-    ? await Promise.all([fetchUsers(token), listOrgMembers(), listAvailableRoles()])
-    : [[], [] as OrgMemberRow[], [] as AvailableRole[]];
+  const [users, orgMembers] = token
+    ? await Promise.all([fetchUsers(token), listOrgMembers()])
+    : [[], [] as OrgMemberRow[]];
 
   return (
     <UsersClient
       initialUsers={users}
       callerRole={callerRole}
       orgMembers={orgMembers}
-      availableRoles={availableRoles}
     />
   );
 }

@@ -198,7 +198,12 @@ export async function listAllOrgProducts() {
   }>;
 }
 
-export async function updateProductStatus(orgId: string, productId: string, status: string) {
+export async function updateProductStatus(
+  orgId: string,
+  productId: string,
+  status: string,
+  trialDays?: number | null
+) {
   const token = await getToken();
   const res = await fetch(
     `${API_URL}/api/v1/organizations/${orgId}/products/${encodeURIComponent(productId)}/status`,
@@ -208,7 +213,7 @@ export async function updateProductStatus(orgId: string, productId: string, stat
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status, trialDays: trialDays ?? null }),
     }
   );
   if (!res.ok) await handleError(res, "Error al actualizar estado del producto");
