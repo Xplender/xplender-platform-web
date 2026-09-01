@@ -11,10 +11,10 @@ import {
 import {
   removeMember,
   removeProduct,
-  updateProductStatus,
 } from "../actions";
 import { InviteMemberModal } from "./InviteMemberModal";
 import { AddProductModal } from "./AddProductModal";
+import { UpdateProductStatusModal } from "./UpdateProductStatusModal";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -52,11 +52,11 @@ const ORG_ROLE_MAP: Record<string, { color: string; bg: string; label: string }>
   member: { color: "#374151", bg: "#f3f4f6", label: "Miembro" },
 };
 
-const PRODUCT_STATUS_OPTIONS = [
-  { value: "active",    label: "Activo" },
-  { value: "trial",     label: "Trial" },
-  { value: "suspended", label: "Suspendido" },
-];
+const PRODUCT_STATUS_MAP: Record<string, { color: string; bg: string; label: string }> = {
+  active:    { color: "#065f46", bg: "#ecfdf5", label: "Activo" },
+  trial:     { color: "#3730a3", bg: "#eef2ff", label: "Trial" },
+  suspended: { color: "#991b1b", bg: "#fef2f2", label: "Suspendido" },
+};
 
 const AVATAR_COLORS = [
   { bg: "#EEF2FF", color: "#4C63FC" },
@@ -104,6 +104,8 @@ export function OrgDetailClient({ org }: { org: OrgDetail | null }) {
   const [, startTransition] = useTransition();
   const [memberModal, setMemberModal] = useState(false);
   const [productModal, setProductModal] = useState(false);
+  const [updateProductId, setUpdateProductId] = useState<string | null>(null);
+  const [updateProductStatus, setUpdateProductStatus] = useState<string>("trial");
   const [toast, setToast] = useState<string | null>(null);
 
   function showToast(msg: string) {
@@ -240,22 +242,21 @@ export function OrgDetailClient({ org }: { org: OrgDetail | null }) {
                       </span>
                     )}
                     <div className="flex-1" />
-                    <select
-                      value={p.status}
-                      onChange={(e) =>
-                        mutate(
-                          () => updateProductStatus(org.id, p.productId, e.target.value),
-                          "Estado actualizado"
-                        )
-                      }
-                      className="text-xs border border-[#E2E4EC] rounded-lg px-2 py-1 bg-white text-[#444A60] cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#4C63FC] transition-colors"
+                    <button
+                      onClick={() => {
+                        setUpdateProductId(p.productId);
+                        setUpdateProductStatus(p.status);
+                      }}
+                      className="text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer transition-colors hover:opacity-80"
+                      style={{
+                        color: (PRODUCT_STATUS_MAP[p.status] ?? PRODUCT_STATUS_MAP.active).color,
+                        backgroundColor: (PRODUCT_STATUS_MAP[p.status] ?? PRODUCT_STATUS_MAP.active).bg,
+                        borderColor: (PRODUCT_STATUS_MAP[p.status] ?? PRODUCT_STATUS_MAP.active).color + "40",
+                      }}
                     >
-                      {PRODUCT_STATUS_OPTIONS.map((o) => (
-                        <option key={o.value} value={o.value}>
-                          {o.label}
-                        </option>
-                      ))}
-                    </select>
+                      {(PRODUCT_STATUS_MAP[p.status] ?? { label: p.status }).label}
+                      <svg className="inline ml-1 w-3 h-3 -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+                    </button>
                     <button
                       onClick={() =>
                         mutate(
@@ -319,6 +320,17 @@ export function OrgDetailClient({ org }: { org: OrgDetail | null }) {
           orgId={org.id}
           onClose={() => {
             setProductModal(false);
+            router.refresh();
+          }}
+        />
+      )}
+      {updateProductId && (
+        <UpdateProductStatusModal
+          orgId={org.id}
+          productId={updateProductId}
+          currentStatus={updateProductStatus}
+          onClose={() => {
+            setUpdateProductId(null);
             router.refresh();
           }}
         />
