@@ -31,6 +31,7 @@ type ProductRow = {
   productId: string;
   planId: string | null;
   status: string;
+  trialExpiresAt: string | null;
   createdAt: string;
 };
 
@@ -242,21 +243,28 @@ export function OrgDetailClient({ org }: { org: OrgDetail | null }) {
                       </span>
                     )}
                     <div className="flex-1" />
-                    <button
-                      onClick={() => {
-                        setUpdateProductId(p.productId);
-                        setUpdateProductStatus(p.status);
-                      }}
-                      className="text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer transition-colors hover:opacity-80"
-                      style={{
-                        color: (PRODUCT_STATUS_MAP[p.status] ?? PRODUCT_STATUS_MAP.active).color,
-                        backgroundColor: (PRODUCT_STATUS_MAP[p.status] ?? PRODUCT_STATUS_MAP.active).bg,
-                        borderColor: (PRODUCT_STATUS_MAP[p.status] ?? PRODUCT_STATUS_MAP.active).color + "40",
-                      }}
-                    >
-                      {(PRODUCT_STATUS_MAP[p.status] ?? { label: p.status }).label}
-                      <svg className="inline ml-1 w-3 h-3 -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
-                    </button>
+                    <div className="flex flex-col items-end gap-0.5">
+                      <button
+                        onClick={() => {
+                          setUpdateProductId(p.productId);
+                          setUpdateProductStatus(p.status);
+                        }}
+                        className="text-xs font-semibold px-2.5 py-1 rounded-lg border cursor-pointer transition-colors hover:opacity-80"
+                        style={{
+                          color: (PRODUCT_STATUS_MAP[p.status] ?? PRODUCT_STATUS_MAP.active).color,
+                          backgroundColor: (PRODUCT_STATUS_MAP[p.status] ?? PRODUCT_STATUS_MAP.active).bg,
+                          borderColor: (PRODUCT_STATUS_MAP[p.status] ?? PRODUCT_STATUS_MAP.active).color + "40",
+                        }}
+                      >
+                        {(PRODUCT_STATUS_MAP[p.status] ?? { label: p.status }).label}
+                        <svg className="inline ml-1 w-3 h-3 -mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="m6 9 6 6 6-6"/></svg>
+                      </button>
+                      {p.status === "trial" && p.trialExpiresAt && (
+                        <span className="text-[10px] text-[#7B8099]">
+                          Vence {new Date(p.trialExpiresAt).toLocaleDateString("es-MX", { day: "numeric", month: "short" })}
+                        </span>
+                      )}
+                    </div>
                     <button
                       onClick={() =>
                         mutate(
